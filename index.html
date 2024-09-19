@@ -114,15 +114,15 @@
                     const iteration = mandelbrot(cx, cy);
                     const pixelIndex = (py * width + px) * 4;
                     if (iteration === maxIterations) {
-                        pixels[pixelIndex] = 0;      // R
-                        pixels[pixelIndex + 1] = 0;  // G
-                        pixels[pixelIndex + 2] = 0;  // B
-                        pixels[pixelIndex + 3] = 255;  // Alpha
+                        pixels[pixelIndex] = 0;
+                        pixels[pixelIndex + 1] = 0;
+                        pixels[pixelIndex + 2] = 0;
+                        pixels[pixelIndex + 3] = 255;
                     } else {
                         const colorFactor = iteration / maxIterations;
-                        pixels[pixelIndex] = rgbColor.r * colorFactor;      // R
-                        pixels[pixelIndex + 1] = rgbColor.g * colorFactor;  // G
-                        pixels[pixelIndex + 2] = rgbColor.b * colorFactor;  // B
+                        pixels[pixelIndex] = rgbColor.r * colorFactor; 
+                        pixels[pixelIndex + 1] = rgbColor.g * colorFactor;
+                        pixels[pixelIndex + 2] = rgbColor.b * colorFactor;
                         pixels[pixelIndex + 3] = 255;    // Alpha
                     }
                 }
@@ -179,11 +179,11 @@
             isDragging = false;
         }
 
-        canvas.addEventListener('wheel', zoomMandelbrot);  // 监听滚轮进行缩放
-        canvas.addEventListener('mousedown', startDrag);   // 鼠标按下时开始拖动
-        canvas.addEventListener('mousemove', dragMandelbrot);  // 鼠标移动时拖动画布
-        canvas.addEventListener('mouseup', stopDrag);      // 鼠标松开时停止拖动
-        canvas.addEventListener('mouseleave', stopDrag);   // 鼠标离开画布时停止拖动
+        canvas.addEventListener('wheel', zoomMandelbrot);
+        canvas.addEventListener('mousedown', startDrag);
+        canvas.addEventListener('mousemove', dragMandelbrot);
+        canvas.addEventListener('mouseup', stopDrag);
+        canvas.addEventListener('mouseleave', stopDrag);
 
         iterationsSlider.addEventListener('input', function() {
             maxIterations = parseInt(iterationsSlider.value);
