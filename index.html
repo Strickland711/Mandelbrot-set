@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>曼德勃罗集演示</title>
+    <link rel="icon" href="symbol.png" type="image/png">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            overflow: hidden;
+        }
+        canvas {
+            cursor: grab;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        #controlsContainer {
+            position: fixed;
+            top: 10px;
+            left: 10px; 
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: sans-serif;
+            z-index: 100; 
+        }
+        #iterationsLabel {
+            margin-right: 10px;
+        }
+        #iterationsSlider {
+            width: 200px;
+        }
+        #colorPickerLabel {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="mandelbrotCanvas"></canvas>
+
+    <div id="controlsContainer">
+        <div>
+            <label id="iterationsLabel">迭代次数: 100</label>
+            <input type="range" id="iterationsSlider" min="50" max="1000" value="100" step="10">
+        </div>
+        <div>
+            <label id="colorPickerLabel">颜色: </label>
+            <input type="color" id="colorPicker" value="#ffffff">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mandelbrotCanvas');
+        const ctx = canvas.getContext('2d');
+        const iterationsLabel = document.getElementById('iterationsLabel');
+        const iterationsSlider = document.getElementById('iterationsSlider');
+        const colorPicker = document.getElementById('colorPicker');
+
+        let maxIterations = parseInt(iterationsSlider.value);
+        let zoom = 250;
+        let offsetX = 0;
+        let offsetY = 0;
+        let outerColor = colorPicker.value;
+
+        let isDragging = false;
+        let startX, startY;
+
+        // 根据窗口调整画布大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawMandelbrot();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); 
+
+        // 将屏幕坐标转换为复平面坐标
+        function mandelbrot(cx, cy) {
+            let x = 0, y = 0;
+            let iteration = 0;
+
+            while (x * x + y * y <= 4 && iteration < maxIterations) {
+                let xTemp = x * x - y * y + cx;
+                y = 2 * x * y + cy;
+                x = xTemp;
+                iteration++;
+            }
+
+            return iteration;
+        }
+
+        // 绘制曼德勃罗集
+        function drawMandelbrot() {
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const imageData = ctx.createImageData(width, height);
+            const pixels = imageData.data;
+            const rgbColor = hexToRgb(outerColor);
+
+            for (let py = 0; py < height; py++) {
+                for (let px = 0; px < width; px++) {
+                    const cx = (px - width / 2 + offsetX) / zoom;
+                    const cy = (py - height / 2 + offsetY) / zoom;
+                    const iteration = mandelbrot(cx, cy);
+                    const pixelIndex = (py * width + px) * 4;
+                    if (iteration === maxIterations) {
+                        pixels[pixelIndex] = 0;      // R
+                        pixels[pixelIndex + 1] = 0;  // G
+                        pixels[pixelIndex + 2] = 0;  // B
+                        pixels[pixelIndex + 3] = 255;  // Alpha
+                    } else {
+                        const colorFactor = iteration / maxIterations;
+                        pixels[pixelIndex] = rgbColor.r * colorFactor;      // R
+                        pixels[pixelIndex + 1] = rgbColor.g * colorFactor;  // G
+                        pixels[pixelIndex + 2] = rgbColor.b * colorFactor;  // B
+                        pixels[pixelIndex + 3] = 255;    // Alpha
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            return {
+                r: (bigint >> 16) & 255,
+                g: (bigint >> 8) & 255,
+                b: bigint & 255
+            };
+        }
+
+        // 缩放
+        function zoomMandelbrot(event) {
+            const zoomFactor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+            const mouseX = event.offsetX;
+            const mouseY = event.offsetY;
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const mousePosX = (mouseX - canvasWidth / 2) / zoom + offsetX / zoom;
+            const mousePosY = (mouseY - canvasHeight / 2) / zoom + offsetY / zoom;
+            zoom *= zoomFactor;
+            offsetX = mousePosX * zoom - (mouseX - canvasWidth / 2);
+            offsetY = mousePosY * zoom - (mouseY - canvasHeight / 2);
+            drawMandelbrot();
+        }
+
+        // 鼠标拖动
+        function startDrag(event) {
+            isDragging = true;
+            startX = event.clientX;
+            startY = event.clientY;
+        }
+        function dragMandelbrot(event) {
+            if (isDragging) {
+                const deltaX = startX - event.clientX;
+                const deltaY = startY - event.clientY;
+
+                offsetX += deltaX;
+                offsetY += deltaY;
+
+                startX = event.clientX;
+                startY = event.clientY;
+
+                drawMandelbrot();
+            }
+        }
+        function stopDrag() {
+            isDragging = false;
+        }
+
+        canvas.addEventListener('wheel', zoomMandelbrot);  // 监听滚轮进行缩放
+        canvas.addEventListener('mousedown', startDrag);   // 鼠标按下时开始拖动
+        canvas.addEventListener('mousemove', dragMandelbrot);  // 鼠标移动时拖动画布
+        canvas.addEventListener('mouseup', stopDrag);      // 鼠标松开时停止拖动
+        canvas.addEventListener('mouseleave', stopDrag);   // 鼠标离开画布时停止拖动
+
+        iterationsSlider.addEventListener('input', function() {
+            maxIterations = parseInt(iterationsSlider.value);
+            iterationsLabel.textContent = `Iterations: ${maxIterations}`;
+            drawMandelbrot();
+        });
+
+        // 颜色选择
+        colorPicker.addEventListener('input', function() {
+            outerColor = colorPicker.value;
+            drawMandelbrot();
+        });
+
+        // 初始化
+        drawMandelbrot();
+    </script>
+</body>
+</html>
+
